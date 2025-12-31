@@ -5,3 +5,5 @@ packages/
 .vscode/
 /Bootstrap/basebin
 /Bootstrap.xcodeproj/project.xcworkspace/xcuserdata
+/basebin/common/lib/libcommon.a
+/basebin/common/lib/prepare.a
