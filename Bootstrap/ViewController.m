@@ -166,6 +166,7 @@ void initFromSwiftUI()
     [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"app-version: %@"),NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]]];
 
     [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"boot-session: %@"),getBootSession()]];
+    [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"build-time: %@"),@"26/01/01 19:15:54"]];
 
     [AppDelegate addLogText: isBootstrapInstalled()? Localized(@"bootstrap installed"):Localized(@"bootstrap not installed")];
     [AppDelegate addLogText: isSystemBootstrapped()? Localized(@"system bootstrapped"):Localized(@"system not bootstrapped")];
@@ -435,6 +436,12 @@ NSArray* ResignExecutables = @[
     @"/sbin/launchd",
     @"/usr/libexec/xpcproxy",
     @"/System/Library/CoreServices/SpringBoard.app/SpringBoard",
+    @"/usr/libexec/dasd",
+    @"/usr/libexec/thermalmonitord",
+    @"/usr/libexec/lsd",
+    @"/usr/libexec/replayd",
+    @"/System/Library/PrivateFrameworks/AppStoreDaemon.framework/Support/appstored",
+    @"/System/Library/PrivateFrameworks/Pasteboard.framework/Support/pasted",
 ];
 
 #define RESIGNED_SYSROOT_PATH jbroot(@"/.sysroot")
