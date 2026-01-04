@@ -74,3 +74,4 @@
 "app-version: %@" = "app-version: %@";
 "boot-session: %@" = "boot-session: %@";
 "UI made with love by haxi0. ♡" = "UI made with love by haxi0. ♡";
+"build-time: %@" = "build-time: %@";
