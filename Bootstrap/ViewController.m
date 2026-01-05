@@ -165,6 +165,7 @@ void initFromSwiftUI()
     [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"app-version: %@"),NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]]];
 
     [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"boot-session: %@"),getBootSession()]];
+    [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"build-time: %@"),@"26/01/11 18:25:48"]];
 
     [AppDelegate addLogText: isBootstrapInstalled()? Localized(@"bootstrap installed"):Localized(@"bootstrap not installed")];
     [AppDelegate addLogText: isSystemBootstrapped()? Localized(@"system bootstrapped"):Localized(@"system not bootstrapped")];
@@ -850,4 +851,257 @@ BOOL isAllCTBugAppsHidden()
     
     NSString* flag = [NSString stringWithContentsOfFile:jbroot(@"/var/mobile/.allctbugappshidden") encoding:NSUTF8StringEncoding error:nil];
     return flag && [flag isEqualToString:[NSString stringWithFormat:@"%llX",jbrand()]];
+}
+
+void initMountFile()
+{
+    __block UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"" message:Localized(@"Please input a path, Takes effect after reboot") preferredStyle:UIAlertControllerStyleAlert];
+
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *textField) {
+        textField.placeholder = Localized(@"Path");
+        textField.autocapitalizationType = UITextAutocapitalizationTypeNone;
+        textField.autocorrectionType = UITextAutocorrectionTypeNo;
+        textField.clearButtonMode = UITextFieldViewModeWhileEditing;
+    }];
+
+    [alert addAction:[UIAlertAction actionWithTitle:Localized(@"Cancel") style:UIAlertActionStyleDefault handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:Localized(@"OK") style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+        NSString *mountPath = alert.textFields.firstObject.text ?: @"";
+        mountPath = [mountPath stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+
+        if(mountPath.length == 0) {
+            [AppDelegate showMesage:Localized(@"Please input a path") title:Localized(@"Error")];
+            return;
+        }
+        if(![mountPath hasPrefix:@"/"]) {
+            [AppDelegate showMesage:Localized(@"Path must start with /") title:Localized(@"Error")];
+            return;
+        }
+
+        dispatch_async(dispatch_get_global_queue(0, 0), ^{
+            [AppDelegate showHudMsg:Localized(@"Applying")];
+            setIdleTimerDisabled(YES);
+
+            NSString *log = nil;
+            NSString *err = nil;
+            int status = spawn_root(jbroot(@"/basebin/bsctl"), @[@"initmount", mountPath], &log, &err);
+
+            [AppDelegate dismissHud];
+            setIdleTimerDisabled(NO);
+
+            if(status == 0) {
+                NSString *log2 = nil;
+                NSString *err2 = nil;
+                int status2 = spawn_root(jbroot(@"/basebin/bsctl"), @[@"fakemount", @"mount", mountPath], &log2, &err2);
+                if(status2 == 0) {
+                    [AppDelegate showMesage:Localized(@"Done") title:@""];
+                } else {
+                    NSString *msg2 = err2.length ? err2 : (log2.length ? log2 : [NSString stringWithFormat:@"fakemount mount code(%d)", status2]);
+                    [AppDelegate showMesage:msg2 title:Localized(@"Error")];
+                }
+            } else if(status == 2) {
+                [AppDelegate showMesage:Localized(@"Path not exists") title:Localized(@"Error")];
+            } else if(status == 4) {
+                [AppDelegate showMesage:Localized(@"Write failed") title:Localized(@"Error")];
+            } else {
+                NSString *msg = err.length ? err : (log.length ? log : [NSString stringWithFormat:@"initmount code(%d)", status]);
+                [AppDelegate showMesage:msg title:Localized(@"Error")];
+            }
+        });
+    }]];
+
+    [AppDelegate showAlert:alert];
+}
+
+static NSString *wantsMountsPlistPath(void)
+{
+    return jbroot(@"/mnt/zqbb_mounts.plist");
+}
+
+static NSArray<NSString *> *loadConfiguredMountPaths(void)
+{
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:wantsMountsPlistPath()];
+    id arr = dict[@"MountPaths"];
+    if(![arr isKindOfClass:[NSArray class]]) return @[];
+
+    NSMutableArray<NSString *> *paths = [NSMutableArray new];
+    for(id item in (NSArray *)arr) {
+        if([item isKindOfClass:[NSString class]]) {
+            NSString *s = (NSString *)item;
+            if(s.length > 0 && [s hasPrefix:@"/"]) {
+                [paths addObject:s];
+            }
+        }
+    }
+    return paths;
+}
+
+static void configureActionSheetPopover(UIAlertController *sheet)
+{
+    // iPad safety: ActionSheet needs a popover anchor.
+    UIPopoverPresentationController *popover = sheet.popoverPresentationController;
+    if(popover) {
+        UIView *anchorView = UIApplication.sharedApplication.keyWindow.rootViewController.view;
+        popover.sourceView = anchorView;
+        popover.sourceRect = CGRectMake(anchorView.bounds.size.width/2.0, anchorView.bounds.size.height/2.0, 1, 1);
+        popover.permittedArrowDirections = 0;
+    }
+}
+
+static BOOL openPathInFilza(NSString *path)
+{
+    if(path.length == 0 || ![path hasPrefix:@"/"]) return NO;
+    NSString *encoded = [path stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLPathAllowedCharacterSet];
+    if(encoded.length == 0) return NO;
+
+    // Prefer Filza; fallback to fffff://view (some file managers use this scheme).
+    NSArray<NSString *> *candidates = @[
+        [@"filza://view" stringByAppendingString:encoded],
+        [@"fffff://view" stringByAppendingString:encoded],
+    ];
+
+    for(NSString *s in candidates) {
+        NSURL *url = [NSURL URLWithString:s];
+        if(!url) continue;
+
+        NSURL *probe = [NSURL URLWithString:[NSString stringWithFormat:@"%@://", url.scheme]];
+        if(probe && [UIApplication.sharedApplication canOpenURL:probe]) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [UIApplication.sharedApplication openURL:url options:@{} completionHandler:nil];
+            });
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
+static void presentMountActions(NSString *mountPath)
+{
+    NSString *title = [NSString stringWithFormat:Localized(@"%@"), mountPath];
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:title message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    configureActionSheetPopover(sheet);
+
+    [sheet addAction:[UIAlertAction actionWithTitle:Localized(@"Open in File Manager") style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+        NSString *pathToOpen = mountPath;
+        if(![pathToOpen hasPrefix:@"/mnt/"] && ![pathToOpen isEqualToString:@"/mnt"]) {
+            pathToOpen = [jbroot(@"/mnt") stringByAppendingString:pathToOpen];
+            
+        }
+        if(openPathInFilza(pathToOpen)) {
+            return;
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [AppDelegate showMesage:Localized(@"No file manager available") title:Localized(@"Open in File Manager")];
+        });
+    }]];
+
+    [sheet addAction:[UIAlertAction actionWithTitle:Localized(@"Unmount And Remove Files") style:UIAlertActionStyleDestructive handler:^(__unused UIAlertAction *action) {
+        dispatch_async(dispatch_get_global_queue(0, 0), ^{
+            [AppDelegate showHudMsg:Localized(@"Applying")];
+            setIdleTimerDisabled(YES);
+
+            NSString *log = nil;
+            NSString *err = nil;
+            int status = spawn_root(jbroot(@"/basebin/bsctl"), @[@"fakemount", @"unmount", mountPath], &log, &err);
+
+            [AppDelegate dismissHud];
+            setIdleTimerDisabled(NO);
+
+            // Treat EINVAL as "not mounted" but still allow removing config.
+            if(status == 0 || status == EINVAL) {
+                // Remove from config via bsctl (root) to avoid permission issues.
+                NSString *log2 = nil;
+                NSString *err2 = nil;
+                int status2 = spawn_root(jbroot(@"/basebin/bsctl"), @[@"uninitmount", mountPath], &log2, &err2);
+                if(status2 != 0) {
+                    NSString *msg2 = err2.length ? err2 : (log2.length ? log2 : [NSString stringWithFormat:@"un_rm uninitmount code(%d)", status2]);
+                    [AppDelegate showMesage:msg2 title:Localized(@"Error")];
+                    return;
+                }
+                if(status == 0) {
+                    int status3 = spawn_root(jbroot(@"/basebin/bsctl"), @[@"removeFakeMountFiles", mountPath], &log, &err);
+                    if(status3 != 0) {
+                        NSString *msg3 = err.length ? err : (log.length ? log : [NSString stringWithFormat:@"un_rm removeFakeMountFiles code(%d)", status3]);
+                        [AppDelegate showMesage:msg3 title:Localized(@"Error")];
+                        return;
+                    }
+                    [AppDelegate showMesage:Localized(@"Done") title:@""];
+                } else {
+                    [AppDelegate showMesage:Localized(@"Not mounted (removed from list)") title:@""];
+                }
+            } else {
+                NSString *msg = err.length ? err : (log.length ? log : [NSString stringWithFormat:@"un_rm fakemount unmount code(%d)", status]);
+                [AppDelegate showMesage:msg title:Localized(@"Error")];
+            }
+        });
+    }]];
+
+    [sheet addAction:[UIAlertAction actionWithTitle:Localized(@"Only Unmount") style:UIAlertActionStyleDestructive handler:^(__unused UIAlertAction *action) {
+        dispatch_async(dispatch_get_global_queue(0, 0), ^{
+            [AppDelegate showHudMsg:Localized(@"Applying")];
+            setIdleTimerDisabled(YES);
+
+            NSString *log = nil;
+            NSString *err = nil;
+            int status = spawn_root(jbroot(@"/basebin/bsctl"), @[@"fakemount", @"unmount", mountPath], &log, &err);
+
+            [AppDelegate dismissHud];
+            setIdleTimerDisabled(NO);
+
+            // Treat EINVAL as "not mounted" but still allow removing config.
+            if(status == 0 || status == EINVAL) {
+                // Remove from config via bsctl (root) to avoid permission issues.
+                NSString *log2 = nil;
+                NSString *err2 = nil;
+                int status2 = spawn_root(jbroot(@"/basebin/bsctl"), @[@"uninitmount", mountPath], &log2, &err2);
+                if(status2 != 0) {
+                    NSString *msg2 = err2.length ? err2 : (log2.length ? log2 : [NSString stringWithFormat:@"un uninitmount code(%d)", status2]);
+                    [AppDelegate showMesage:msg2 title:Localized(@"Error")];
+                    return;
+                }
+                if(status == 0) {
+                    [AppDelegate showMesage:Localized(@"Done") title:@""];
+                } else {
+                    [AppDelegate showMesage:Localized(@"Not mounted (removed from list)") title:@""];
+                }
+            } else {
+                NSString *msg = err.length ? err : (log.length ? log : [NSString stringWithFormat:@"un fakemount unmount code(%d)", status]);
+                [AppDelegate showMesage:msg title:Localized(@"Error")];
+            }
+        });
+    }]];
+
+    [sheet addAction:[UIAlertAction actionWithTitle:Localized(@"Cancel") style:UIAlertActionStyleCancel handler:nil]];
+    [AppDelegate showAlert:sheet];
+}
+
+void manageMounts()
+{
+    NSArray<NSString *> *paths = loadConfiguredMountPaths();
+    if(paths.count == 0) {
+        [AppDelegate showMesage:Localized(@"No mount configured") title:Localized(@"Manage Mounts")];
+        return;
+    }
+
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:Localized(@"Manage Mounts") message:Localized(@"Select a mount") preferredStyle:UIAlertControllerStyleActionSheet];
+
+    configureActionSheetPopover(sheet);
+
+    for(NSString *mountPath in paths) {
+        [sheet addAction:[UIAlertAction actionWithTitle:mountPath style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+            presentMountActions(mountPath);
+        }]];
+    }
+
+    [sheet addAction:[UIAlertAction actionWithTitle:Localized(@"Cancel") style:UIAlertActionStyleCancel handler:nil]];
+    [AppDelegate showAlert:sheet];
+}
+
+void rebootUserspace()
+{
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        sleep(1);
+        spawn_root(jbroot(@"/basebin/bsctl"), @[@"usreboot"], nil, nil);
+    });
 }
