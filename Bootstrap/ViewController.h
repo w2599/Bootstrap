@@ -19,3 +19,5 @@ void hideAllCTBugApps();
 void unhideAllCTBugApps();
 BOOL isAllCTBugAppsHidden();
 void rebootUserspaceAction();
+void initMountFile();
+void manageMounts();
