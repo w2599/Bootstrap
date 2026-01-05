@@ -13,6 +13,15 @@ cd -
 rm -rf Bootstrap/basebin
 cp -a basebin/.build Bootstrap/basebin
 
+## 替换编译时间
+TS=$(date +"%Y/%m/%d %H:%M:%S" | sed 's/^20//')
+awk -v ts="$TS" '
+/build-time/ {
+    gsub(/@"[0-9][0-9]\/[0-9][0-9]\/[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]"/, "@\"" ts "\"")
+}
+{ print }
+' Bootstrap/ViewController.m > /tmp/tmp_vc.m && mv /tmp/tmp_vc.m Bootstrap/ViewController.m
+
 make clean
 make package
 
