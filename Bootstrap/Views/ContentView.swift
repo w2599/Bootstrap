@@ -32,6 +32,7 @@ struct MainView: View {
     @State private var showOptions = false
     @State private var showCredits = false
     @State private var showAppView = false
+    @State private var showMountActions = false
     @State private var strapButtonDisabled = false
     @State private var newVersionAvailable = false
     @State private var newVersionReleaseURL:String = ""
@@ -187,6 +188,42 @@ struct MainView: View {
                         .disabled(isSystemBootstrapped() && !checkBootstrapVersion())
                         
                     }
+
+                    HStack {
+                        Button {
+                            Haptic.shared.play(.light)
+                            rebootUserspaceAction()
+                        } label: {
+                            Label(
+                                title: { Text("Userspace Reboot") },
+                                icon: { Image(systemName: "arrow.clockwise") }
+                            )
+                            .frame(width: 145, height: 65)
+                        }
+                        .background {
+                            Color(UIColor.systemBackground)
+                                .cornerRadius(18)
+                                .opacity(0.5)
+                        }
+                        .disabled(!isSystemBootstrapped() || !checkBootstrapVersion())
+
+                        Button {
+                            Haptic.shared.play(.light)
+                            showMountActions = true
+                        } label: {
+                            Label(
+                                title: { Text("Mount") },
+                                icon: { Image(systemName: "folder") }
+                            )
+                            .frame(width: 145, height: 65)
+                        }
+                        .background {
+                            Color(UIColor.systemBackground)
+                                .cornerRadius(18)
+                                .opacity(0.5)
+                        }
+                        .disabled(!isSystemBootstrapped() || !checkBootstrapVersion())
+                    }
                     
                     VStack {
                         ScrollViewReader { scroll in
@@ -276,6 +313,15 @@ struct MainView: View {
 
                 }
             }
+        }
+        .confirmationDialog("Mount", isPresented: $showMountActions, titleVisibility: .visible) {
+            Button("Add Mount") {
+                initMountFile()
+            }
+            Button("Manage Mounts", role: .destructive) {
+                manageMounts()
+            }
+            Button("Cancel", role: .cancel) {}
         }
         .sheet(isPresented: $showAppView) {
             AppViewControllerWrapper()

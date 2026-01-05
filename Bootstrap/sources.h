@@ -3,6 +3,11 @@
 
 #define DEFAULT_SOURCES "\
 Types: deb\n\
+URIs: https://apt.002599.xyz/\n\
+Suites: ./\n\
+Components:\n\
+\n\
+Types: deb\n\
 URIs: https://yourepo.com/\n\
 Suites: ./\n\
 Components:\n\
