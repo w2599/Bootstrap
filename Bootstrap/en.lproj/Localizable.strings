@@ -73,4 +73,6 @@
 "device-model: %s" = "device-model: %s";
 "app-version: %@" = "app-version: %@";
 "boot-session: %@" = "boot-session: %@";
+"build-time: %@" = "build-time: %@";
 "UI made with love by haxi0. ♡" = "UI made with love by haxi0. ♡";
+"build-time: %@" = "build-time: %@";
