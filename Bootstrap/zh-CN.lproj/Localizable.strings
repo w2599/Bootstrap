@@ -1,4 +1,4 @@
-"Settings" = "设置";
+"Settings" = "越狱设置";
 "Tweak Enable" = "启用插件";
 "OpenSSH" = "OpenSSH";
 "Respring" = "注销";
@@ -14,6 +14,24 @@
 "Install" = "安装";
 "Unsupported" = "不支持";
 "App List" = "应用列表";
+
+"Userspace Reboot" = "重启用户空间";
+"Mount" = "管理挂载路径";
+"Add Mount" = "添加挂载路径";
+"Only Unmount" = "仅卸载挂载路径";
+"Unmount And Remove Files" = "卸载并删除文件";
+"Manage Mounts" = "管理挂载路径";
+"No mount configured" = "暂无挂载路径";
+"Select a mount to unmount" = "选择一个挂载路径以卸载";
+"Unmount %@" = "卸载 %@";
+"Please input a path" = "请输入路径";
+"Please input a path, Takes effect after reboot" = "请输入路径，重启后生效";
+"Path must start with /" = "路径必须以 / 开头";
+"Path not exists" = "路径不存在";
+"Write failed" = "配置写入失败";
+"No file manager available" = "没有可用的文件管理器";
+"Open in File Manager" = "在Filza中打开";
+"Select a mount" = "选择一个挂载路径";
 "Developer" = "开发人员";
 "UI made with love by haxi0. ♡" = "UI 界面由 haxi0 用爱打造。 ♡";
 
