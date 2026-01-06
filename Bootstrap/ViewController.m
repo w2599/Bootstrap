@@ -439,6 +439,10 @@ NSArray* ResignExecutables = @[
     @"/System/Library/CoreServices/SpringBoard.app/SpringBoard",
     @"/usr/bin/powerlogHelperd",
     @"/usr/sbin/spindump",
+    
+    @"/usr/libexec/dasd",
+    @"/usr/libexec/thermalmonitord",
+    @"/usr/libexec/lsd",
 ];
 
 #define RESIGNED_SYSROOT_PATH jbroot(@"/.sysroot")
@@ -502,10 +506,64 @@ int exploitStart(NSString* execDir)
             }
         }
 
-        NSString* entitlementsFileInBundlePath = [NSString stringWithFormat:@"basebin/entitlements/executables/%@.extra", sourcePath.lastPathComponent];
-        NSString* entitlementsFilePath = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:entitlementsFileInBundlePath];
-        if([fm fileExistsAtPath:entitlementsFilePath]) {
-            ASSERT(spawnRoot(ldidPath, @[@"-M", [NSString stringWithFormat:@"-S%@", entitlementsFilePath], destPath], nil, nil) == 0);
+        NSString* extraEntitlementsInBundlePath = [NSString stringWithFormat:@"basebin/entitlements/executables/Default.extra", sourcePath.lastPathComponent];
+        NSString* extraEntitlementsPath = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:extraEntitlementsInBundlePath];
+        BOOL hasExtraEntitlements = [fm fileExistsAtPath:extraEntitlementsPath];
+
+        NSString* stripEntitlementsInBundlePath = [NSString stringWithFormat:@"basebin/entitlements/executables/Default.strip", sourcePath.lastPathComponent];
+        NSString* stripEntitlementsPath = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:stripEntitlementsInBundlePath];
+        BOOL hasStripEntitlements = [fm fileExistsAtPath:stripEntitlementsPath];
+
+        // If we need to strip specific entitlements, we must re-sign with a fully materialized entitlements plist.
+        if(hasStripEntitlements)
+        {
+            NSString* entXML = nil;
+            NSString* entErr = nil;
+            ASSERT(spawnRoot(ldidPath, @[@"-e", destPath], &entXML, &entErr) == 0);
+            if (entXML.length < 1) {
+                // 直接增加权限
+                ASSERT(spawnRoot(ldidPath, @[@"-M", [NSString stringWithFormat:@"-S%@", extraEntitlementsPath], destPath], nil, nil) == 0);
+            } else {
+
+                NSData *entData = [entXML dataUsingEncoding:NSUTF8StringEncoding];
+                NSError *plistErr = nil;
+                id entObj = [NSPropertyListSerialization propertyListWithData:entData options:NSPropertyListMutableContainersAndLeaves format:nil error:&plistErr];
+                ASSERT([entObj isKindOfClass:[NSDictionary class]]);
+
+                NSMutableDictionary *mergedEntitlements = [(NSDictionary *)entObj mutableCopy];
+                if (!mergedEntitlements)
+                    mergedEntitlements = [NSMutableDictionary new];
+
+                if (hasExtraEntitlements) {
+                    NSDictionary *extraEntitlements = [NSDictionary dictionaryWithContentsOfFile:extraEntitlementsPath];
+                    if ([extraEntitlements isKindOfClass:[NSDictionary class]]) {
+                        [mergedEntitlements addEntriesFromDictionary:extraEntitlements];
+                    }
+                }
+
+                NSDictionary *stripRules = [NSDictionary dictionaryWithContentsOfFile:stripEntitlementsPath];
+                if ([stripRules isKindOfClass:[NSDictionary class]]) {
+                    [stripRules enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+                        if (![key isKindOfClass:[NSString class]])
+                            return;
+                        NSString *entitlementKey = (NSString *)key;
+                        // 直接删除指定的权限键
+                        [mergedEntitlements removeObjectForKey:entitlementKey];
+                    }];
+                }
+
+                NSError *outErr = nil;
+                NSData *outPlist = [NSPropertyListSerialization dataWithPropertyList:mergedEntitlements format:NSPropertyListXMLFormat_v1_0 options:0 error:&outErr];
+                ASSERT(outPlist.length > 0);
+
+                NSString *tmpEntitlementsPath = [jbroot(@"/tmp") stringByAppendingPathComponent:[NSString stringWithFormat:@"bs_%@_%@.entitlements.plist", sourcePath.lastPathComponent, NSUUID.UUID.UUIDString]];
+                ASSERT([outPlist writeToFile:tmpEntitlementsPath options:NSDataWritingAtomic error:&outErr]);
+                ASSERT(spawnRoot(ldidPath, @[ [NSString stringWithFormat:@"-S%@", tmpEntitlementsPath], destPath ], nil, nil) == 0);
+                [fm removeItemAtPath:tmpEntitlementsPath error:nil];
+            }
+        }
+        else if(hasExtraEntitlements) {
+            ASSERT(spawnRoot(ldidPath, @[@"-M", [NSString stringWithFormat:@"-S%@", extraEntitlementsPath], destPath], nil, nil) == 0);
         }
         
         ASSERT(spawnRoot(fastSignPath, @[destPath], nil, nil) == 0);

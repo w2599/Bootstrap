@@ -15,6 +15,7 @@
 "Unsupported" = "不支持";
 "App List" = "应用列表";
 
+"reboot userspace now..." = "准备重启用户空间...";
 "Userspace Reboot" = "重启用户空间";
 "Mount" = "管理挂载路径";
 "Add Mount" = "添加挂载路径";
