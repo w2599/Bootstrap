@@ -108,7 +108,8 @@ int fixPackageSources()
     
     
     NSString* zebraList = [NSString stringWithContentsOfFile:jbroot(@"/var/mobile/Library/Application Support/xyz.willy.Zebra/sources.list") encoding:NSUTF8StringEncoding error:nil];
-    ASSERT(zebraList != NULL);
+    // ASSERT(zebraList != NULL);
+    if (!zebraList) return 0;
     if([zebraList containsString:@"iphoneos-arm64e/2000"]) {
         if([NSFileManager.defaultManager fileExistsAtPath:jbroot(@"/var/mobile/Library/Application Support/xyz.willy.Zebra/lists")])
             ASSERT([NSFileManager.defaultManager removeItemAtPath:jbroot(@"/var/mobile/Library/Application Support/xyz.willy.Zebra/lists") error:nil]);

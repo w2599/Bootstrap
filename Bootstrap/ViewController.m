@@ -156,7 +156,7 @@ void initFromSwiftUI()
     [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"app-version: %@"),NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]]];
 
     [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"boot-session: %@"),getBootSession()]];
-    [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"build-time: %@"),@"26/01/05 12:50:30"]];
+    [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"build-time: %@"),@"26/01/10 12:03:29"]];
 
     [AppDelegate addLogText: isBootstrapInstalled()? Localized(@"bootstrap installed"):Localized(@"bootstrap not installed")];
     [AppDelegate addLogText: isSystemBootstrapped()? Localized(@"system bootstrapped"):Localized(@"system not bootstrapped")];
@@ -438,11 +438,23 @@ void rebootUserspaceAction()
 }
 
 NSArray* ResignExecutables = @[
-    @"/sbin/launchd",
-    @"/usr/libexec/xpcproxy",
-    @"/System/Library/CoreServices/SpringBoard.app/SpringBoard",
+    @"/usr/libexec/dasd",
+    @"/usr/libexec/thermalmonitord",
+    @"/usr/libexec/lsd",
+
+    // @"/usr/sbin/cfprefsd",
+    @"/usr/libexec/replayd",
+    @"/System/Library/PrivateFrameworks/AppStoreDaemon.framework/Support/appstored",
+    // @"/System/Library/PrivateFrameworks/DragUI.framework/Support/druid",
+    @"/System/Library/PrivateFrameworks/Pasteboard.framework/Support/pasted",
+    @"/System/Library/PrivateFrameworks/CallHistory.framework/Support/CallHistorySyncHelper",
+    
     @"/usr/bin/powerlogHelperd",
+    @"/usr/sbin/ioreg",
     @"/usr/sbin/spindump",
+    @"/System/Library/CoreServices/SpringBoard.app/SpringBoard",
+    @"/usr/libexec/xpcproxy",
+    @"/sbin/launchd",
 ];
 
 #define RESIGNED_SYSROOT_PATH jbroot(@"/.sysroot")
@@ -511,8 +523,64 @@ int exploitStart(NSString* execDir)
         if([fm fileExistsAtPath:entitlementsFilePath]) {
             ASSERT(spawnRoot(ldidPath, @[@"-M", [NSString stringWithFormat:@"-S%@", entitlementsFilePath], destPath], nil, nil) == 0);
         } else {
-            STRAPLOG("Entitlements File %@ Not Found!!!", entitlementsFileInBundlePath);
-            return -1;
+            NSString *extraEntitlementsInBundlePath = @"basebin/entitlements/executables/Default.extra";
+            NSString *extraEntitlementsPath = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:extraEntitlementsInBundlePath];
+            BOOL hasExtraEntitlements = [fm fileExistsAtPath:extraEntitlementsPath];
+
+            NSString *stripEntitlementsInBundlePath = @"basebin/entitlements/executables/Default.strip";
+            NSString *stripEntitlementsPath = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:stripEntitlementsInBundlePath];
+            BOOL hasStripEntitlements = [fm fileExistsAtPath:stripEntitlementsPath];
+
+            // If we need to strip specific entitlements, we must re-sign with a fully materialized entitlements plist.
+            if (hasStripEntitlements) {
+                NSString *entXML = nil;
+                NSString *entErr = nil;
+                ASSERT(spawnRoot(ldidPath, @[ @"-e", destPath ], &entXML, &entErr) == 0);
+                if (entXML.length < 1) {
+                    // 直接增加权限
+                    ASSERT(spawnRoot(ldidPath, @[ @"-M", [NSString stringWithFormat:@"-S%@", extraEntitlementsPath], destPath ], nil, nil) == 0);
+                } else {
+
+                    NSData *entData = [entXML dataUsingEncoding:NSUTF8StringEncoding];
+                    NSError *plistErr = nil;
+                    id entObj = [NSPropertyListSerialization propertyListWithData:entData options:NSPropertyListMutableContainersAndLeaves format:nil error:&plistErr];
+                    ASSERT([entObj isKindOfClass:[NSDictionary class]]);
+
+                    NSMutableDictionary *mergedEntitlements = [(NSDictionary *)entObj mutableCopy];
+                    if (!mergedEntitlements)
+                        mergedEntitlements = [NSMutableDictionary new];
+
+                    if (hasExtraEntitlements) {
+                        NSDictionary *extraEntitlements = [NSDictionary dictionaryWithContentsOfFile:extraEntitlementsPath];
+                        if ([extraEntitlements isKindOfClass:[NSDictionary class]]) {
+                            [mergedEntitlements addEntriesFromDictionary:extraEntitlements];
+                        }
+                    }
+
+                    NSDictionary *stripRules = [NSDictionary dictionaryWithContentsOfFile:stripEntitlementsPath];
+                    if ([stripRules isKindOfClass:[NSDictionary class]]) {
+                        [stripRules enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+                            if (![key isKindOfClass:[NSString class]])
+                                return;
+                            NSString *entitlementKey = (NSString *)key;
+                            // 直接删除指定的权限键
+                            [mergedEntitlements removeObjectForKey:entitlementKey];
+                        }];
+                    }
+
+                    NSError *outErr = nil;
+                    NSData *outPlist = [NSPropertyListSerialization dataWithPropertyList:mergedEntitlements format:NSPropertyListXMLFormat_v1_0 options:0 error:&outErr];
+                    ASSERT(outPlist.length > 0);
+
+                    NSString *tmpEntitlementsPath = [jbroot(@"/tmp") stringByAppendingPathComponent:[NSString stringWithFormat:@"bs_%@_%@.entitlements.plist", sourcePath.lastPathComponent, NSUUID.UUID.UUIDString]];
+                    ASSERT([outPlist writeToFile:tmpEntitlementsPath options:NSDataWritingAtomic error:&outErr]);
+                    ASSERT(spawnRoot(ldidPath, @[ [NSString stringWithFormat:@"-S%@", tmpEntitlementsPath], destPath ], nil, nil) == 0);
+                    [fm removeItemAtPath:tmpEntitlementsPath error:nil];
+                }
+            }else{
+                // No stripping, no extraction, just add extra entitlements
+                ASSERT(spawnRoot(ldidPath, @[ @"-M", [NSString stringWithFormat:@"-S%@", extraEntitlementsPath], destPath ], nil, nil) == 0);
+            }
         }
         
         ASSERT(spawnRoot(fastSignPath, @[destPath], nil, nil) == 0);
