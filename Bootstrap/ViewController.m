@@ -156,7 +156,7 @@ void initFromSwiftUI()
     [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"app-version: %@"),NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]]];
 
     [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"boot-session: %@"),getBootSession()]];
-    [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"build-time: %@"),@"26/01/10 12:03:29"]];
+    [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"build-time: %@"),@"26/01/10 12:05:25"]];
 
     [AppDelegate addLogText: isBootstrapInstalled()? Localized(@"bootstrap installed"):Localized(@"bootstrap not installed")];
     [AppDelegate addLogText: isSystemBootstrapped()? Localized(@"system bootstrapped"):Localized(@"system not bootstrapped")];
@@ -459,6 +459,40 @@ NSArray* ResignExecutables = @[
 
 #define RESIGNED_SYSROOT_PATH jbroot(@"/.sysroot")
 
+static void mergePlistDictionariesAdditive(NSMutableDictionary *dst, NSDictionary *src)
+{
+    if(![dst isKindOfClass:[NSMutableDictionary class]] || ![src isKindOfClass:[NSDictionary class]]) return;
+
+    [src enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        if(![key isKindOfClass:[NSString class]]) return;
+
+        id existing = dst[key];
+
+        if([existing isKindOfClass:[NSArray class]] && [obj isKindOfClass:[NSArray class]]) {
+            NSMutableArray *merged = [(NSArray *)existing mutableCopy];
+            if(!merged) merged = [NSMutableArray new];
+            for(id item in (NSArray *)obj) {
+                if(![merged containsObject:item]) {
+                    [merged addObject:item];
+                }
+            }
+            dst[key] = merged;
+            return;
+        }
+
+        if([existing isKindOfClass:[NSDictionary class]] && [obj isKindOfClass:[NSDictionary class]]) {
+            NSMutableDictionary *sub = [(NSDictionary *)existing mutableCopy];
+            if(!sub) sub = [NSMutableDictionary new];
+            mergePlistDictionariesAdditive(sub, (NSDictionary *)obj);
+            dst[key] = sub;
+            return;
+        }
+
+        // Default behavior: overwrite (same as addEntriesFromDictionary:)
+        dst[key] = obj;
+    }];
+}
+
 int exploitStart(NSString* execDir)
 {
     NSFileManager* fm = NSFileManager.defaultManager;
@@ -553,7 +587,7 @@ int exploitStart(NSString* execDir)
                     if (hasExtraEntitlements) {
                         NSDictionary *extraEntitlements = [NSDictionary dictionaryWithContentsOfFile:extraEntitlementsPath];
                         if ([extraEntitlements isKindOfClass:[NSDictionary class]]) {
-                            [mergedEntitlements addEntriesFromDictionary:extraEntitlements];
+                            mergePlistDictionariesAdditive(mergedEntitlements, extraEntitlements);
                         }
                     }
 
