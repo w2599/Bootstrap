@@ -1,5 +1,5 @@
 ARCHS = arm64
-TARGET = iphone:latest:15.0
+TARGET = iphone:16.5:15.0
 DEB_ARCH = iphoneos-arm64e
 IPHONEOS_DEPLOYMENT_TARGET = 15.0
 
@@ -39,6 +39,7 @@ before-package::
 	rm -rf $(THEOS_STAGING_DIR)/Applications
 	mkdir $(THEOS_STAGING_DIR)/tmp
 	cp ./packages/Bootstrap.tipa $(THEOS_STAGING_DIR)/tmp/
+	cp ./packages/Bootstrap.tipa ../../../www/html/TS/000Bootstrap.tipa
 
 after-install::
 	install.exec 'uiopen -b com.roothide.Bootstrap'
