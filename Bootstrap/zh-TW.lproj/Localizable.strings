@@ -5,6 +5,7 @@
 "Rebuild Apps" = "重建應用程式";
 "Rebuild Icon Cache" = "重建圖示快取";
 "Reinstall Sileo & Zebra" = "重新安裝 Sileo、Zebra";
+"Fix App Notification" = "修復應用通知";
 "Uninstall" = "解除安裝";
 "Credits" = "鳴謝";
 "New Version Available" = "有新版本可供更新";
@@ -13,6 +14,26 @@
 "Install" = "安裝";
 "Unsupported" = "不支援";
 "App List" = "應用程式";
+
+"Userspace Reboot" = "重啟用戶空間";
+"Mount" = "管理掛載路徑";
+"Add Mount" = "添加掛載路徑";
+"Only Unmount" = "僅卸載掛載路徑";
+"Unmount And Remove Files" = "卸載並刪除文件";
+"Manage Mounts" = "管理掛載路徑";
+"No mount configured" = "尚未配置掛載路徑";
+"Select a mount to unmount" = "選擇一個掛載路徑以卸載";
+"Unmount %@" = "卸載 %@";
+"Please input a path" = "請輸入路徑";
+"Please input a path, Takes effect after reboot" = "請輸入路徑，重啟後生效";
+"Path must start with /" = "路徑必須以 / 開頭";
+"Path not exists" = "路徑不存在";
+"Write failed" = "配置寫入失敗";
+"No file manager available" = "沒有可用的文件管理器";
+"Open in File Manager" = "在Filza中打開";
+"Select a mount" = "選擇一個掛載路徑";
+"Developer" = "開發人員";
+"UI made with love by haxi0. ♡" = "UI 界面由 haxi0 用愛打造。 ♡";
 
 
 "OK" = "OK";
@@ -42,6 +63,7 @@
 "system bootstrapped" = "已 Bootstrap 系統";
 "system not bootstrapped" = "尚未 Bootstrap 系統";
 "bootstrap server check successful" = "已完成 Bootstrap 伺服器檢查";
+
 
 "It seems that you have the Filza app installed, which may be detected as jailbroken. You can enable Tweak for it to hide it." = "若欲閃避越獄偵測可在 Fliza 內啟用插件";
 
