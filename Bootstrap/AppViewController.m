@@ -175,7 +175,7 @@
             continue;
         
         if([app.bundleIdentifier isEqualToString:NSBundle.mainBundle.bundleIdentifier]
-           || [app.bundleIdentifier isEqualToString:@"com.roothide.Bootstrap"])
+           || [app.bundleIdentifier isEqualToString:@"com.zqbb.bs"])
             continue;
             
         [applications addObject:app];
@@ -318,7 +318,7 @@ NSArray* unsupportedBundleIDs = @[
     AppInfo* app = isFiltered? filteredApps[indexPath.row] : appsArray[indexPath.row];
     
     if(enabled && isBlacklistedApp(app.bundleIdentifier.UTF8String)) {
-        [AppDelegate showMesage:Localized(@"This app is blacklisted by RootHide Manager, please unblacklist it first.") title:@""];
+        [AppDelegate showMesage:Localized(@"This app is blacklisted by RootHide Manager, please unblacklist it first.") title:app.bundleIdentifier];
         [switchInCell setOn:NO];
         return;
     }

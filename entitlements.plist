@@ -40,8 +40,8 @@
     
 	<key>com.apple.security.exception.shared-preference.read-write</key>
 	<array>
-        <string>com.roothide.Bootstrap</string>
-        <string>com.roothide.Bootstrap.shared</string>
+        <string>com.zqbb.bs</string>
+        <string>com.zqbb.bs.shared</string>
 	</array>
     
     <key>com.apple.private.MobileContainerManager.allowed</key>

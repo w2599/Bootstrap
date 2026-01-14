@@ -32,6 +32,7 @@
 "No file manager available" = "没有可用的文件管理器";
 "Open in File Manager" = "在Filza中打开";
 "Select a mount" = "选择一个挂载路径";
+"This app is blacklisted by RootHide Manager, please unblacklist it first." = "此应用已被 RootHide Manager 列入黑名单，请先将其移出黑名单。";
 "Developer" = "开发人员";
 "UI made with love by haxi0. ♡" = "UI 界面由 haxi0 用爱打造。 ♡";
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 set -e
-
+export DEVELOPER_DIR="/Applications/Xcode-14.3.0.app/Contents/Developer"
 PREV_DIR=$(pwd)
 WORK_DIR=$(dirname -- "$0")
 cd "$WORK_DIR"
