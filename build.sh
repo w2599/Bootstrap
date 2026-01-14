@@ -1,17 +1,10 @@
 #!/bin/sh
 
 set -e
-
+export DEVELOPER_DIR="/Applications/Xcode-14.3.0.app/Contents/Developer"
 PREV_DIR=$(pwd)
 WORK_DIR=$(dirname -- "$0")
 cd "$WORK_DIR"
-
-cd basebin
-./build.sh
-cd -
-
-rm -rf Bootstrap/basebin
-cp -a basebin/.build Bootstrap/basebin
 
 ## 替换编译时间
 TS=$(date +"%Y/%m/%d %H:%M:%S" | sed 's/^20//')
@@ -21,6 +14,13 @@ awk -v ts="$TS" '
 }
 { print }
 ' Bootstrap/ViewController.m > /tmp/tmp_vc.m && mv /tmp/tmp_vc.m Bootstrap/ViewController.m
+
+cd basebin
+./build.sh
+cd -
+
+rm -rf Bootstrap/basebin
+cp -a basebin/.build Bootstrap/basebin
 
 make clean
 make package
