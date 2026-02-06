@@ -200,8 +200,8 @@ void initFromSwiftUI()
 
     [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"app-version: %@"),NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]]];
 
-    [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"boot-session: %@"),getBootSession()]];
-    [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"build-time: %@"),@"26/02/06 09:48:42"]];
+    // [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"boot-session: %@"),getBootSession()]];
+    [AppDelegate addLogText:[NSString stringWithFormat:Localized(@"build-time: %@\nIf you encounter any issues, please test them using the official version before reporting them to the developer."),@"26/02/06 12:11:34"]];
 
     [AppDelegate addLogText: isBootstrapInstalled()? Localized(@"bootstrap installed"):Localized(@"bootstrap not installed")];
     [AppDelegate addLogText: isSystemBootstrapped()? Localized(@"system bootstrapped"):Localized(@"system not bootstrapped")];
