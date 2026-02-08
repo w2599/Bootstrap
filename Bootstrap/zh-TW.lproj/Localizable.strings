@@ -33,6 +33,10 @@
 "Open in File Manager" = "在Filza中打開";
 "Select a mount" = "選擇一個掛載路徑";
 "This app is blacklisted by RootHide Manager, please unblacklist it first." = "此應用已被 RootHide Manager 列入黑名單，請先將其移出黑名單。";
+"build-time: %@\nPlease retest any issues using the official version before reporting them to the developers." = "編譯時間: %@\n友情提示: 請用官方版本復測任何問題，再向開發者報告。\n";
+"ios-version: %@" = "系統版本: %@";
+"device-model: %s" = "設備型號: %s";
+"app-version: %@" = "越獄版本: %@";
 "Developer" = "開發人員";
 "UI made with love by haxi0. ♡" = "UI 界面由 haxi0 用愛打造。 ♡";
 
@@ -59,11 +63,11 @@
 "Rebuilding" = "重建中";
 "Don't exit Bootstrap app until show the lock screen" = "請勿在螢幕尚未顯示鎖定畫面前退出應用程式";
 
-"bootstrap installed" = "已安裝 Bootstrap";
-"bootstrap not installed" = "未安裝 Bootstrap";
-"system bootstrapped" = "已 Bootstrap 系統";
-"system not bootstrapped" = "尚未 Bootstrap 系統";
-"bootstrap server check successful" = "已完成 Bootstrap 伺服器檢查";
+"bootstrap installed" = "Bootstrap 已安裝";
+"bootstrap not installed" = "Bootstrap 未安裝";
+"system bootstrapped" = "Bootstrap 系統已引導";
+"system not bootstrapped" = "Bootstrap 系統未引導";
+"bootstrap server check successful" = "Bootstrap 伺服器檢查成功";
 
 
 "It seems that you have the Filza app installed, which may be detected as jailbroken. You can enable Tweak for it to hide it." = "若欲閃避越獄偵測可在 Fliza 內啟用插件";
