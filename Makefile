@@ -1,5 +1,5 @@
 ARCHS = arm64
-TARGET = iphone:latest:15.0
+TARGET = iphone:16.5:15.0
 DEB_ARCH = iphoneos-arm64e
 IPHONEOS_DEPLOYMENT_TARGET = 15.0
 
