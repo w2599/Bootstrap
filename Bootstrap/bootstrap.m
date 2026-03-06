@@ -607,6 +607,7 @@ int unbootstrap()
     [LSApplicationWorkspace.defaultWorkspace _LSPrivateRebuildApplicationDatabasesForSystemApps:YES internal:YES user:YES];
     
     AppInfo* tsapp = [AppInfo appWithBundleIdentifier:@"com.opa334.TrollStore"];
+    if (!tsapp) tsapp = [AppInfo appWithBundleIdentifier:@"cn.zqbb.TStore"];
     if(tsapp) {
         NSString* log=nil;
         NSString* err=nil;
