@@ -314,6 +314,7 @@ int rebuildIconCache()
     
     ASSERT([@"1" writeToFile:jbroot(@"/var/mobile/.rebuildiconcache") atomically:YES encoding:NSUTF8StringEncoding error:nil]);
     AppInfo* tsapp = [AppInfo appWithBundleIdentifier:@"com.opa334.TrollStore"];
+    if (!tsapp) tsapp = [AppInfo appWithBundleIdentifier:@"cn.zqbb.TStore"];
     if(!tsapp) {
         ASSERT([@"-1" writeToFile:jbroot(@"/var/mobile/.rebuildiconcache") atomically:YES encoding:NSUTF8StringEncoding error:nil]);
         STRAPLOG("trollstore not found!");
